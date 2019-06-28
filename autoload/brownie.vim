@@ -166,7 +166,7 @@ function! s:extractor.ready(template_path) abort
   let had_finish = 0
   for line in contents
     if line =~# '\v^%([^:].*)$|^:\s*fini%[sh]>'
-      let had_finish = (line =~# '^:\s*fini%[sh]>')
+      let had_finish = (line =~# '\v^:\s*fini%[sh]>')
       break
     endif
     let idx += 1
