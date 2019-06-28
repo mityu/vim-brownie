@@ -1,0 +1,214 @@
+*brownie.txt* A template/snippet plugin.
+
+Maintainer: mityu <mityu.email (at) gmail.com>
+Lisence: the MIT License
+
+==============================================================================
+CONTENTS                                                  *brownie-contents*
+
+FEATURES                      |brownie-features|
+FUNCTIONS                     |brownie-functions|
+VARIABLES                     |brownie-variables|
+COLORS                        |brownie-colors|
+HOOK                          |brownie-hook|
+TEMPLATE                      |brownie-template|
+
+
+==============================================================================
+FEATURES                                                *brownie-features*
+
+A template/snippet framework plugin for Vim, strongly inspired by
+mattn/sonictemplate-vim and thinca/vim-template.
+This plugin provides following features:
+- List templates/snippets
+- Extract templates/snippets
+
+
+==============================================================================
+FUNCTIONS                                               *brownie-functions*
+
+                                                    *brownie#list()*
+brownie#list({filetype}, {kind})
+    Return list of templates/snippets for {filetype}.
+    {kind} is "template" or "snippet".
+    Example: >
+        " List templates for cpp.
+        let templates = brownie#list('cpp', 'template')
+
+        " List snippets for vimscript.
+        let snippets = brownie#list('vim', 'snippet')
+<
+
+                                                    *brownie#extract()*
+brownie#extract({filetype}, {kind}, {name})
+    Extract a template/snippet named {name} for {filetype} on the cursor spot.
+
+
+                                            *brownie#is_buffer_empty()*
+brownie#is_buffer_empty([{bufnr}])
+    If buffer of {bufnr} is an empty buffer, returns 1; otherwise, returns 0.
+    {bufnr} is evalated by |bufnr()|.  If {bufnr} isn't given, a returned
+    value of |brownie#get_current_bufnr()| will be used.
+
+
+                                            *brownie#get_current_bufnr()*
+brownie#get_current_bufnr()
+    Return current buffer number, but it works well even if you're in |cmdwin|.
+
+
+-----------------------------------------------------------------------------
+                                            *brownie-template-functions*
+The following functions are available only in the template/snippet script and
+|brownie-hook|.
+NOTE: You shouldn't modify buffer in the template/snippet or |brownie-hook|
+via built-in functions or commands (e.g. |:substitute|, |:global|, and
+|append()|) because may be thrown away.
+
+
+                                                *brownie#replace()*
+brownie#replace({expr}, {sub})
+    Replace all {expr} strings in the template/snippet into {sub}.
+    Note that this function is a wrapper of |substitute()| .
+
+                                                *brownie#input()*
+brownie#input({prompt} [, {text} [, {completion}]])
+    Almost same as |input()|.  However, if |input()| is canceled (e.g. due to
+    <C-c>), returns ""(an empty string).
+
+                                                *brownie#highlight()*
+brownie#highlight({pattern})
+
+
+==============================================================================
+VARIABLES                                               *brownie-variables*
+
+g:brownie#snippets_directory
+    |List| of |String| of directory(ies) to snippets.
+
+                                                        *g:brownie#info*
+g:brownie#info
+    NOTE: NOT IMPLEMENTED YET!
+    |Dictionary| and only be available in |brownie-hook|.
+    The following are descriptoins of its fields.
+    - kind
+      "template" or "snippet".
+    - location
+      A |Dictionary| that has "begin" and "end" fields that specificates
+      where the extracted snippet is.
+
+
+==============================================================================
+COLORS                                                  *brownie-colors*
+
+BrowniePlaceHolder                                      *BrowniePlaceHolder*
+    The color to highlight placeholders.
+    In default, BrowniePlaceHolder is linked to TODO.
+
+    Example: >
+        " Display placeholders in italic.
+        augroup vimrc-brownie-coloring
+            autocmd!
+            autocmd ColorScheme *
+                \ highlight BrowniePlaceHolder term=italic gui=italic
+        augroup END
+<
+
+==============================================================================
+HOOK                                                   *brownie-hook*
+
+|brownie.vim| triggers some |User| autocmds for hook in the following rule.
+
+    `:autocmd User brownie-{kind}`
+
+{kind} will be:
+                                                     *brownie-extract-pre*
+extract-pre
+    Before loading the template/snippet file.
+
+    Example: >
+    " Clear buffer for applying template.
+    augroup brownie-template-config
+      autocmd!
+      autocmd User brownie-extract-pre call s:brownie_template_config()
+    augroup END
+    function! s:brownie_template_config() abort
+      if g:brownie#info.kind ==# 'template
+        silent % delete _
+      endif
+    endfunction
+<
+
+                                                     *brownie-extract-post*
+extract-post
+    After finishing extracting a template/snippet process.
+
+                                     *brownie-source-pre* *brownie-source-post*
+source-pre
+source-post
+    Before/After sourcing scripts. Even if the template/snippet doesn't have
+    scripts, this autocmd is triggered.
+    In these autocmds, |brownie-script-functions| are available.
+
+Note that |g:brownie#info| is available while these autocmd hooks.
+
+
+==============================================================================
+EXAMPLES                                            *brownie-examples*
+
+Use snippet extraction in insert mode. >
+    function! s:extract_snippet()
+      " Pick up the cursor word and use it as a snippet name.
+      let line = getline('.')[: col('.') - 1]
+      let snip = matchstr(line, '\%(\w\|-\)\+$')
+      if snip ==# '' || brownie#exists(&filetype, 'snippet', snip)
+        return ''
+      endif
+      " Delete the word to prepare for extracting the snippet.
+      execute printf('normal! v%dh"_d', strlen(snip))
+      call brownie#extract(&filetype, 'snippet', snip)
+      return ''
+    endfunction
+    inoremap <C-k> <C-r>=<SID>extract_snippet()<CR>
+<
+
+Make a snippet completion. >
+    " Make it reloadable.
+    if !exists('s:snippets')
+      let s:snippets = {}
+    endif
+    function! CompleteSnippet(findstart, base) abort
+      " Cache a snippet list.
+      if !has_key(s:snippets, &filetype)
+        let s:snippets[&filetype] = brownie#list(&filetype, 'snippet')
+      endif
+      if a:findstart
+        let base = matchstr(getline('.')[: col('.') - 1],'\%(\w\|-\)\+$')
+        return col('.') - strlen(base)
+      else
+        return filter(copy(s:snippets[&filetype]), 'stridx(v:val, a:base) == 0')
+      endif
+    endfunction
+    set completefunc=CompleteSnippet
+<
+
+==============================================================================
+TEMPLATE                                            *brownie-template*
+
+How to write your templates/snippets.
+
+------------------------------------------------------------------------------
+File placing rule~
+                                        *brownie-template-naming-rule*
+
+/path/to/template/directory/
+    - filetype/
+        - template/         ........        Listed only when "template."
+        - snippet/          ........        Listed only when "snippet."
+        template.txt        ........        Listed always.
+
+
+------------------------------------------------------------------------------
+File contents~
+
+==============================================================================
+vim:tw=78:ts=8:ft=help:norl:fen:fdl=0:

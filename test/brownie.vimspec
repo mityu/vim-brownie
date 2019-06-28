@@ -1,0 +1,239 @@
+let s:scope = themis#helper('scope')
+let s:funcs = s:scope.funcs('autoload/brownie.vim')
+let s:vars = s:funcs.script_variables()
+call themis#func_alias(s:funcs)
+call themis#func_alias(s:vars.extractor)
+call themis#func_alias(s:vars.viewer)
+call themis#func_alias(s:vars.options_shelter)
+call themis#helper('command').with(themis#helper('assert'))
+
+Describe [brownie.vim]
+  Before all
+    function! Call(script)
+      let [func, args] = split(
+            \ substitute(a:script, '\s', '', 'g'),
+            \ '^\_[^(]\{-}\zs\ze(')
+      return call(s:funcs[func], eval('[' . args[1 : -2] . ']'))
+    endfunction
+    command! -nargs=+ Call call Call(<q-args>)
+
+    function! WholeBufline()
+      return getline(1, '$')
+    endfunction
+
+    let g:brownie_template_dirs = [s:vars.plugin_root . '/test/template']
+  End
+  After all
+    delfunction Call
+    delcommand Call
+  End
+
+  Describe s:let_default()
+    After each
+      unlet g:test
+    End
+    It doesn't allow to assign twice.
+      Call let_default('g:test', 0)
+      Assert Equals(g:test, 0)
+      Call let_default('g:test', 1)
+      Assert Equals(g:test, 0)
+    End
+    It doesn't assign when the variable is already declared.
+      let g:test = 0
+      Call let_default('g:test', 1)
+      Assert Equals(g:test, 0)
+    End
+  End
+
+  Describe options_shelter
+  End
+
+  Describe brownie#is_buffer_empty()
+    It returns true when buffer is empty.
+      silent % delete _
+      Assert Equals(brownie#is_buffer_empty(), 1)
+    End
+
+    It returns false when buffer is not empty.
+      call setline(1, 'hoge')
+      Assert Equals(brownie#is_buffer_empty(), 0)
+    End
+
+    Context from another buffer
+      Before all
+      End
+      After all
+        % bwipeout!
+      End
+      It returns true when buffer is empty.
+        silent % delete _
+        let bufnr = bufnr('%')
+        new
+        call setline(1, 'hoge')
+        Assert Equals(brownie#is_buffer_empty(bufnr), 1)
+      End
+
+      It returns false when buffer is not empty.
+        call setline(1, 'hoge')
+        let bufnr = bufnr('%')
+        new
+        call setline(1, 'fuga')
+        Assert Equals(brownie#is_buffer_empty(bufnr), 0)
+      End
+    End
+  End
+
+  Describe brownie#list()
+    Before all
+      function List(filetype, kind) abort
+        return sort(brownie#list(a:kind))
+      endfunction
+    End
+    After all
+      delfunction List
+    End
+    It lists templates.
+      Assert Equals(brownie#list('list', 'template'),
+            \ sort(['always', 'template', 'always-always', 'always-template']))
+    End
+    It lists snippets.
+      Assert Equals(brownie#list('list', 'snippet'),
+            \ sort(['always', 'snippet', 'always-always', 'always-snippet']))
+    End
+    It can list templates even when filetype is empty.
+      Assert Equals(brownie#list('', 'template'),
+            \ sort(['always-always', 'always-template']))
+    End
+    It can list snippets even when filetype is empty.
+      Assert Equals(brownie#list('', 'snippet'),
+            \ sort(['always-always', 'always-snippet']))
+    End
+  End
+
+  Describe s:extractor
+    Before all
+      let g:context = s:vars.context
+      let g:viewer = s:vars.viewer
+      function GetTemplatePath(name)
+        return s:funcs.list_templates('extract', 'template', a:name)[-1]
+      endfunction
+      function NewExtractor()
+        let g:extractor = deepcopy(s:vars.extractor)
+        return g:extractor
+      endfunction
+    End
+    After all
+      unlet g:extractor
+    End
+    Before each
+      silent % delete _
+    End
+    It's ready().
+      call NewExtractor()
+      " NOTE: context.kind is set in brownie#extract().
+      let context = {
+            \ 'kind': '',
+            \ 'path': '',
+            \ 'script': [],
+            \ 'contents': ['template'],
+            \ 'extract_pos': {'line': 1, 'col': 1},
+            \ 'indent': 0,
+            \ 'original_text': ['', ''],
+            \ 'is_sourcing': 0,
+            \ }
+      let context.path = GetTemplatePath('oneline')
+      call g:extractor.ready(context.path)
+      Assert Equals(g:context, context)
+    End
+    Context's s:viewer
+      It's update_template_location().
+        call g:viewer.update_template_location()
+        Assert Equals(g:viewer.template_location, {'begin': 1, 'end': 1})
+      End
+      It's paste_template().
+        call g:viewer.paste_template()
+        Assert Equals(WholeBufline(), ['template'])
+      End
+      It's paste_template() with original text.
+        let g:context.original_text = ['hoge-', '-fuga']
+        call g:viewer.paste_template()
+        Assert Equals(WholeBufline(), ['hoge-template-fuga'])
+        let g:context.original_text = ['', '']
+      End
+      It's restore_buffer_lines().
+        call g:viewer.paste_template()
+        call g:viewer.restore_buffer_lines()
+        Assert Equals(WholeBufline(), [''])
+      End
+      It's restore_buffer_lines() with original text.
+        let g:context.original_text = ['hoge', '-fuga']
+        call g:viewer.paste_template()
+        call g:viewer.restore_buffer_lines()
+        Assert Equals(WholeBufline(), ['hoge-fuga'])
+        let g:context.original_text = ['', '']
+      End
+      It's finish does nothing with buffer lines.
+        call setline(1, 'hoge')
+        call g:viewer.finish()
+        Assert Equals(WholeBufline(), ['hoge'])
+      End
+      It's set_cursor_pos().
+        call NewExtractor().ready(GetTemplatePath('cursor'))
+        call g:viewer.update_screen()
+        call g:extractor.set_cursor_pos()
+        Assert Equals(WholeBufline(), ['template', '', 'template'])
+        Assert Equals(line('.'), 2)
+        Assert Equals(col('.'), 1)
+      End
+      It can separate contents into script and template.
+        let path = GetTemplatePath('command')
+        call NewExtractor().ready(path)
+        Assert Equals(g:context.script, [readfile(path)[0]])
+        Assert Equals(g:context.contents, ['template'])
+      End
+      It executes command on the top of the template/snippet file.
+        let g:test_msg = ''
+        call g:extractor.source_script()
+        Assert Equals(g:test_msg, 'executed')
+        unlet g:test_msg
+      End
+    End
+  End
+
+  Describe brownie#extract()
+    Before all
+      function Extract(kind, name) abort
+        return brownie#extract('extract', a:kind, a:name)
+      endfunction
+    End
+    After all
+      delfunction Extract
+    End
+    Before each
+      silent % delete _
+    End
+    After each
+    End
+    It extracts a oneline template.
+      let returned = Extract('template', 'oneline')
+      Assert Equals(returned, 1)
+      Assert Equals(WholeBufline(), ['template'])
+    End
+    It extracts a multiline template.
+      call Extract('template', 'multiline')
+      Assert Equals(WholeBufline(), ['template', 'template'])
+    End
+    It extracts a oneline snippet.
+      call Extract('snippet', 'oneline')
+      Assert Equals(WholeBufline(), ['snippet'])
+    End
+    It extracts a multiline snippet.
+      call Extract('snippet', 'multiline')
+      Assert Equals(WholeBufline(), ['snippet', 'snippet'])
+    End
+    It returns 0 when an unavailable template/snippet is specificated.
+      Assert Equals(Extract('template', 'hoge'), 0)
+      Assert Equals(Extract('snippet', 'hoge'), 0)
+    End
+  End
+End

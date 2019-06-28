@@ -1,0 +1,2 @@
+:call brownie#replace('\<kind\>', 'snippet')
+kind
