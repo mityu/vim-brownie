@@ -260,7 +260,7 @@ call s:let_default('s:scriptfuncs', {'impl': {}})
 
 function! s:scriptfuncs.call(func, ...) abort
   if !s:context.is_sourcing
-    echoerr 'isnot sourcing!'
+    call s:error_msg('only available while sourcing scripts.')
     return s:FALSE
   endif
   return call(self.impl[a:func], a:000)
