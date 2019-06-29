@@ -42,6 +42,7 @@ brownie#list({filetype}, {kind})
                                                     *brownie#extract()*
 brownie#extract({filetype}, {kind}, {name})
     Extract a template/snippet named {name} for {filetype} on the cursor spot.
+    Returns 1 if scceeded to extract; otherwise, returns 0.
 
 
                                             *brownie#is_buffer_empty()*

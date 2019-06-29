@@ -253,6 +253,7 @@ function! s:extract_impl(template_path) abort
   finally
     call s:extractor.finish()
     call s:doautocmd('extract-post')
+    return s:TRUE
   endtry
 endfunction
 
@@ -314,8 +315,7 @@ function! brownie#extract(filetype, kind, name) abort
     return s:FALSE
   endif
   let s:context.kind = a:kind
-  call s:extract_impl(templates[-1])
-  return s:TRUE
+  return s:extract_impl(templates[-1])
 endfunction
 
 function! brownie#exists(filetype, kind, name) abort
