@@ -233,7 +233,9 @@ function! s:extractor.set_cursor_pos() abort
   if stridx(join(s:context.contents, "\n"), s:cursor_marker) != -1
     " Jump to cursor marker.
     call search(s:cursor_marker, 'cW')
+    let curpos = getpos('.')
     normal! "_da{
+    call setpos('.', curpos)
   endif
 endfunction
 
