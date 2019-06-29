@@ -180,7 +180,7 @@ function! s:extractor.ready(template_path) abort
   if s:use_softtab()
     " Convert from hardtab indentation to softtab indentation.
     let matcher = '\v%(^%(\s)*)@<=\s'
-    let indent = repeat(' ', s:context.indent)
+    let indent = repeat(' ', shiftwidth())
     call map(contents, 'substitute(v:val, matcher, indent, "g")')
   endif
   let s:context.contents = contents
