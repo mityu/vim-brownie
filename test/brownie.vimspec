@@ -45,6 +45,40 @@ Describe [brownie.vim]
     End
   End
 
+  Describe s:use_softtab()
+    After all
+      setlocal noexpandtab
+    End
+    It returns 1 when expandtab is enabled.
+      setlocal expandtab
+      let v = s:funcs.use_softtab()
+      Assert Equals(v, 1)
+    End
+    It returns 0 when expandtab is disabled.
+      setlocal noexpandtab
+      let v = s:funcs.use_softtab()
+      Assert Equals(v, 0)
+    End
+  End
+
+  Describe s:str_divide_pos()
+    It separates string with provided the position.
+      let s = 'hogefuga'
+      let r = s:funcs.str_divide_pos(s, strlen('hoge'))
+      Assert Equals(r, ['hoge', 'fuga'])
+    End
+    It can separate string even if 0 is provided as the position.
+      let s = 'hoge'
+      let r = s:funcs.str_divide_pos(s, 0)
+      Assert Equals(r, ['', s])
+    End
+    It can separate string even if length of string is provided as the position.
+      let s = 'hoge'
+      let r = s:funcs.str_divide_pos(s, strlen(s))
+      Assert Equals(r, [s, ''])
+    End
+  End
+
   Describe options_shelter
   End
 
@@ -222,6 +256,12 @@ Describe [brownie.vim]
     It extracts a multiline template.
       call Extract('template', 'multiline')
       Assert Equals(WholeBufline(), ['template', 'template'])
+    End
+    It uses softtab as indentations.
+      setlocal expandtab shiftwidth=2
+      call Extract('template','indent')
+      Assert Equals(WholeBufline(), ['  indent'])
+      setlocal noexpandtab
     End
     It extracts a oneline snippet.
       call Extract('snippet', 'oneline')
