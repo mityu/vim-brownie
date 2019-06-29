@@ -233,7 +233,9 @@ function! s:extractor.set_cursor_pos() abort
   if stridx(join(s:context.contents, "\n"), s:cursor_marker) != -1
     " Jump to cursor marker.
     call search(s:cursor_marker, 'cW')
+    let curpos = getpos('.')
     normal! "_da{
+    call setpos('.', curpos)
   endif
 endfunction
 
@@ -251,6 +253,7 @@ function! s:extract_impl(template_path) abort
   finally
     call s:extractor.finish()
     call s:doautocmd('extract-post')
+    return s:TRUE
   endtry
 endfunction
 
@@ -258,7 +261,7 @@ call s:let_default('s:scriptfuncs', {'impl': {}})
 
 function! s:scriptfuncs.call(func, ...) abort
   if !s:context.is_sourcing
-    echoerr 'isnot sourcing!'
+    call s:error_msg('only available while sourcing scripts.')
     return s:FALSE
   endif
   return call(self.impl[a:func], a:000)
@@ -312,8 +315,7 @@ function! brownie#extract(filetype, kind, name) abort
     return s:FALSE
   endif
   let s:context.kind = a:kind
-  call s:extract_impl(templates[-1])
-  return s:TRUE
+  return s:extract_impl(templates[-1])
 endfunction
 
 function! brownie#exists(filetype, kind, name) abort

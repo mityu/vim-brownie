@@ -2,6 +2,7 @@
 
 Maintainer: mityu <mityu.email (at) gmail.com>
 Lisence: the MIT License
+The latest version: https://github.com/mityu/vim-brownie
 
 ==============================================================================
 CONTENTS                                                  *brownie-contents*
@@ -17,7 +18,7 @@ TEMPLATE                      |brownie-template|
 ==============================================================================
 FEATURES                                                *brownie-features*
 
-A template/snippet framework plugin for Vim, strongly inspired by
+A template/snippet plugin for Vim, strongly inspired by
 mattn/sonictemplate-vim and thinca/vim-template.
 This plugin provides following features:
 - List templates/snippets
@@ -42,6 +43,7 @@ brownie#list({filetype}, {kind})
                                                     *brownie#extract()*
 brownie#extract({filetype}, {kind}, {name})
     Extract a template/snippet named {name} for {filetype} on the cursor spot.
+    Returns 1 if scceeded to extract; otherwise, returns 0.
 
 
                                             *brownie#is_buffer_empty()*
@@ -60,9 +62,9 @@ brownie#get_current_bufnr()
                                             *brownie-template-functions*
 The following functions are available only in the template/snippet script and
 |brownie-hook|.
-NOTE: You shouldn't modify buffer in the template/snippet or |brownie-hook|
-via built-in functions or commands (e.g. |:substitute|, |:global|, and
-|append()|) because may be thrown away.
+NOTE: You shouldn't modify buffer via built-in functions or commands (e.g.
+|:substitute|, |:global|, and |append()|) in scripts of the template/snippet
+or on |brownie-hook|  because those changes may be thrown away.
 
 
                                                 *brownie#replace()*
@@ -77,6 +79,9 @@ brownie#input({prompt} [, {text} [, {completion}]])
 
                                                 *brownie#highlight()*
 brownie#highlight({pattern})
+    Highlight {pattern} in the template/snippet.
+    The color will be |BrowniePlaceHolder|.
+    {pattern} is a regexp string. See |patterns|.
 
 
 ==============================================================================
