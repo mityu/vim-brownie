@@ -107,6 +107,12 @@ function! s:viewer.paste_template() abort
   let contents = copy(s:context.contents)
   let contents[0] = s:context.original_text[0] . contents[0]
   let contents[-1] .= s:context.original_text[1]
+
+  let newline_count = len(contents) - 1
+  if newline_count
+    call append(loc.begin, repeat([''], newline_count))
+  endif
+
   call setline(loc.begin, contents)
   if ((loc.end - loc.begin) >= 1) && s:context.indent
     " Make sure indent.
