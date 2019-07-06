@@ -8,6 +8,7 @@ function! s:let_default(name, value) abort
 endfunction
 
 call s:let_default('g:brownie#info', {})
+call s:let_default('g:brownie#extra_imports', {})
 call s:let_default('s:FALSE', 0)
 call s:let_default('s:TRUE', !s:FALSE)
 call s:let_default('s:context', {
@@ -344,7 +345,10 @@ endfunction
 
 function! s:list_templates(filetype, kind, template_name) abort
   let files = []
-  for filetype in [s:all_filetypes] + (a:filetype ==# '' ? [] : [a:filetype])
+  let filetypes = [s:all_filetypes]
+  let filetypes += a:filetype ==# '' ? [] : [a:filetype]
+  let filetypes += get(g:brownie#extra_imports, a:filetype, [])
+  for filetype in filetypes
     call extend(files, s:list_files(filetype, a:kind, a:template_name))
   endfor
   return files
