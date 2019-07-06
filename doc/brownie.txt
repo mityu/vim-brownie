@@ -90,8 +90,15 @@ brownie#highlight({pattern})
 ==============================================================================
 VARIABLES                                               *brownie-variables*
 
+                                            *g:brownie#snippets_directory*
 g:brownie#snippets_directory
     |List| of |String| of directory(ies) to templates/snippets.
+
+                                            *g:brownie#extra_imports*
+g:brownie#extra_imports
+    |Dictionary|.  Key is filetype, and value is a |List| of filetypes.
+    Templates/Snippets of the filetypes are also listed when listing
+    templates/snippets of the filetype.
 
                                                         *g:brownie#info*
 g:brownie#info
@@ -223,7 +230,7 @@ How to write your own templates/snippets.
 
 ------------------------------------------------------------------------------
 File placing rule~
-                                        *brownie-write-naming-rule*
+                                            *brownie-write-naming-rule*
 
 /path/to/template/directory/
     - filetype/
@@ -231,26 +238,43 @@ File placing rule~
         - snippet/     ......   Listed only when "snippet" is specificated.
         snippet.txt    ......   Listed always.
 
+Example:
+    ~/.vim/brownie/c
+        - template/
+            header.c
+        - snippet/
+            for.c
+            if.c
+            while.c
 
 ------------------------------------------------------------------------------
 File contents~
-                                        *brownie-write-contents*
+                                            *brownie-write-contents*
 
 A template/snippet file has two sections, script section and template section.
 See also: |brownie-write-example|.
 
 - script section
+  This section have to be placed above template section.
   In this section, you write Vim script to modify codes in template section.
+  Every line in this section have to start with ":".  If a line that doesn't
+  start with ":" is found, whole lines below that line will be treated as
+  template section.
+  If you want to specify where the end of script section, use |:finish|
+  command. By using this command, you can include ":" in template section.
+
+  Note that this plugin write this section into a temporary file and execute
+  |:source| command.
 
 - template section
   In this section, you write template/snippet codes.
-  And, `{{_cursor_}}` marker is available. After extracting a
+  And, `{{_cursor_}}` marker is available.  After extracting a
   template/snippet, the cursor will jump to the marker.
 
 
 ------------------------------------------------------------------------------
 A template/snippet example~
-                                        *brownie-write-example*
+                                            *brownie-write-example*
 A snippet to insert current file's name.
 >
    :call brownie#replace('FNAME', expand('%:t'))
