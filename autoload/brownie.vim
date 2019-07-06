@@ -164,7 +164,7 @@ function! s:extractor.ready(template_path) abort
   let s:context.indent = s:indent(s:context.extract_pos.line)
   let s:context.original_text = s:str_divide_pos(
         \ getline(s:context.extract_pos.line),
-        \ s:context.extract_pos.col - 1)
+        \ s:context.extract_pos.col - (mode() ==# 'i' ? 1 : 0))
 
   " Separate file contents into a script and a template/snippet text.
   let contents = readfile(s:context.path)
