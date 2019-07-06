@@ -12,7 +12,8 @@ FUNCTIONS                     |brownie-functions|
 VARIABLES                     |brownie-variables|
 COLORS                        |brownie-colors|
 HOOK                          |brownie-hook|
-TEMPLATE                      |brownie-template|
+EXAMPLES                      |brownie-examples|
+WRITE                         |brownie-write|
 
 
 ==============================================================================
@@ -23,6 +24,8 @@ mattn/sonictemplate-vim and thinca/vim-template.
 This plugin provides following features:
 - List templates/snippets
 - Extract templates/snippets
+
+NOTE that this plugin is UNDER DEVELOPMENT; ANYTHING MAY STILL CHANGE
 
 
 ==============================================================================
@@ -60,8 +63,8 @@ brownie#get_current_bufnr()
 
 -----------------------------------------------------------------------------
                                             *brownie-template-functions*
-The following functions are available only in the template/snippet script and
-|brownie-hook|.
+The following functions are available only in the template/snippet's script
+section and |brownie-hook|.
 NOTE: You shouldn't modify buffer via built-in functions or commands (e.g.
 |:substitute|, |:global|, and |append()|) in scripts of the template/snippet
 or on |brownie-hook|  because those changes may be thrown away.
@@ -88,7 +91,7 @@ brownie#highlight({pattern})
 VARIABLES                                               *brownie-variables*
 
 g:brownie#snippets_directory
-    |List| of |String| of directory(ies) to snippets.
+    |List| of |String| of directory(ies) to templates/snippets.
 
                                                         *g:brownie#info*
 g:brownie#info
@@ -130,18 +133,6 @@ HOOK                                                   *brownie-hook*
 extract-pre
     Before loading the template/snippet file.
 
-    Example: >
-    " Clear buffer for applying template.
-    augroup brownie-template-config
-      autocmd!
-      autocmd User brownie-extract-pre call s:brownie_template_config()
-    augroup END
-    function! s:brownie_template_config() abort
-      if g:brownie#info.kind ==# 'template
-        silent % delete _
-      endif
-    endfunction
-<
 
                                                      *brownie-extract-post*
 extract-post
@@ -157,23 +148,28 @@ source-post
 Note that |g:brownie#info| is available while these autocmd hooks.
 
 
+
 ==============================================================================
 EXAMPLES                                            *brownie-examples*
 
 Use snippet extraction in insert mode. >
-    function! s:extract_snippet()
-      " Pick up the cursor word and use it as a snippet name.
-      let line = getline('.')[: col('.') - 1]
-      let snip = matchstr(line, '\%(\w\|-\)\+$')
-      if snip ==# '' || brownie#exists(&filetype, 'snippet', snip)
+    function! s:extract_snippet() abort
+      let curpos = '\%' . (col('.') - (mode() ==# 'i' ? 1 : 0)) . 'c'
+      if matchstr(getline('.'), curpos . '\a') ==# ''
+        call s:echomsg_warning("Any words aren't on the cursor!")
         return ''
       endif
-      " Delete the word to prepare for extracting the snippet.
-      execute printf('normal! v%dh"_d', strlen(snip))
-      call brownie#extract(&filetype, 'snippet', snip)
+      let begin = match(getline('.'), '\a*\ze' . curpos)
+      let end = match(getline('.'), curpos . '\a*\zs\ze')
+      let [pre, word] = s:strdivpos(getline('.'), begin)
+      let [word, suf] = s:strdivpos(word, end - begin)
+      call setline('.', pre . suf)
+      call cursor(line('.'), begin + 1)
+      call brownie#extract(&filetype, 'snippet', word)
       return ''
     endfunction
-    inoremap <C-k> <C-r>=<SID>extract_snippet()<CR>
+    nnoremap <silent> <C-k> :<C-u>call <SID>extract_snippet()<CR>
+    inoremap <silent> <C-k> <C-r>=<SID>extract_snippet()<CR>
 <
 
 Make a snippet completion. >
@@ -190,30 +186,100 @@ Make a snippet completion. >
         let base = matchstr(getline('.')[: col('.') - 1],'\%(\w\|-\)\+$')
         return col('.') - strlen(base)
       else
-        return filter(copy(s:snippets[&filetype]), 'stridx(v:val, a:base) == 0')
+        return filter(copy(s:snippets[&filetype]),
+            \ 'stridx(v:val, a:base) == 0')
       endif
     endfunction
     set completefunc=CompleteSnippet
 <
+Extract template via :Template command. >
+    command! -nargs=1 -complete=customlist,TemplateComplete Template
+          \ call brownie#extract(s:snip_filetype(), 'template', <q-args>)
+    function! TemplateComplete(arg, line, pos) abort
+      return filter(
+          \ brownie#list(s:snip_filetype(), 'template'),
+          \ 'stridx(v:val, a:arg) == -1')
+    endfunction
+    function! s:snip_filetype() abort
+      return getbufvar(brownie#get_current_bufnr(), '&filetype')
+    endfunction
+>
+Clear buffer before applying template. >
+    augroup brownie-template-config
+      autocmd!
+      autocmd User brownie-extract-pre call s:brownie_template_config()
+    augroup END
+    function! s:brownie_template_config() abort
+      if g:brownie#info.kind ==# 'template
+        silent % delete _
+      endif
+    endfunction
+<
 
 ==============================================================================
-TEMPLATE                                            *brownie-template*
+WRITE                                            *brownie-write*
 
-How to write your templates/snippets.
+How to write your own templates/snippets.
 
 ------------------------------------------------------------------------------
 File placing rule~
-                                        *brownie-template-naming-rule*
+                                        *brownie-write-naming-rule*
 
 /path/to/template/directory/
     - filetype/
-        - template/         ........        Listed only when "template."
-        - snippet/          ........        Listed only when "snippet."
-        template.txt        ........        Listed always.
+        - template/    ......   Listed only when "template" is specificated.
+        - snippet/     ......   Listed only when "snippet" is specificated.
+        snippet.txt    ......   Listed always.
 
 
 ------------------------------------------------------------------------------
 File contents~
+                                        *brownie-write-contents*
+
+A template/snippet file has two sections, script section and template section.
+See also: |brownie-write-example|.
+
+- script section
+  In this section, you write Vim script to modify codes in template section.
+
+- template section
+  In this section, you write template/snippet codes.
+  And, `{{_cursor_}}` marker is available. After extracting a
+  template/snippet, the cursor will jump to the marker.
+
+
+------------------------------------------------------------------------------
+A template/snippet example~
+                                        *brownie-write-example*
+A snippet to insert current file's name.
+>
+   :call brownie#replace('FNAME', expand('%:t'))
+   FNAME
+<
+A snippet to insert the present time.
+>
+   :call brownie#replace('TIME', strftime('%c'))
+   TIME
+
+A c/c++ header file with load guard template.
+- If current file has name, use its uppered name as load guard.
+- Otherwise, ask load guard string with |brownie#input()| and use the result
+  as load guard.
+>
+    :let load_guard = substitute(expand('%:p:t'),'\.','_','g')
+    :if load_guard ==# ''
+    :  call brownie#highlight('\C\<LOADGUARD\>')
+    :  let load_guard = brownie#input('Load Guard? ')
+    :endif
+    :call brownie#replace('\C\<LOADGUARD\>', toupper(load_guard))
+    #ifndef LOADGUARD
+    #define LOADGUARD
+
+        {{_cursor_}}
+
+    #endif //  LOADGUARD
+<
+
 
 ==============================================================================
 vim:tw=78:ts=8:ft=help:norl:fen:fdl=0:
