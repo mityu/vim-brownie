@@ -90,12 +90,12 @@ brownie#highlight({pattern})
 ==============================================================================
 VARIABLES                                               *brownie-variables*
 
-                                            *g:brownie#snippets_directory*
-g:brownie#snippets_directory
+                                            *g:brownie_snippets_directory*
+g:brownie_snippets_directory
     |List| of |String| of directory(ies) to templates/snippets.
 
-                                            *g:brownie#extra_imports*
-g:brownie#extra_imports
+                                            *g:brownie_extra_imports*
+g:brownie_extra_imports
     |Dictionary|.  Key is filetype, and value is a |List| of filetypes.
     Templates/Snippets of the filetypes are also listed when listing
     templates/snippets of the filetype.
