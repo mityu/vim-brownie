@@ -180,6 +180,8 @@ function! s:extractor.ready(template_path) abort
   endfor
   if idx != -1
     let s:context.script = remove(contents, 0, idx)
+  else
+    let s:context.script = []
   endif
   if had_finish
     call remove(contents, 0)
