@@ -170,6 +170,9 @@ Use snippet extraction in insert mode. >
       let end = match(getline('.'), curpos . '\a*\zs\ze')
       let [pre, word] = s:strdivpos(getline('.'), begin)
       let [word, suf] = s:strdivpos(word, end - begin)
+      if !brownie#exists(&filetype, 'snippet', word)
+        return ''
+      endif
       call setline('.', pre . suf)
       call cursor(line('.'), begin + 1)
       call brownie#extract(&filetype, 'snippet', word)
@@ -220,6 +223,22 @@ Clear buffer before applying template. >
       if g:brownie#info.kind ==# 'template
         silent % delete _
       endif
+    endfunction
+<
+Leave logs in script section. >
+    augroup brownie-script-log
+      autocmd!
+      autocmd User brownie-extract-post call s:brownie_script_log.display()
+    augroup END
+    if !exists('s:brownie_script_log')
+      let s:brownie_script_log = {'messages': []}
+      function! s:brownie_script_log.display() abort
+        echomsg join(self.messages, "\n")
+        let self.messages = []
+      endfunction
+    endif
+    function! BrownieLog(message) abort
+      call add(s:brownie_script_log.messages, a:message)
     endfunction
 <
 
