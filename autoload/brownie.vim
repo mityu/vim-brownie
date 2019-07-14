@@ -385,7 +385,7 @@ function! s:use_softtab() abort
 endfunction
 
 function! s:indent(line) abort
-  return indent(a:line) / (s:use_softtab() ? shiftwidth() : 1)
+  return indent(a:line) / shiftwidth()
 endfunction
 
 function! s:str_divide_pos(string, position) abort
