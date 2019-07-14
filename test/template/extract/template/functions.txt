@@ -1,4 +1,0 @@
-:call brownie#highlight('\<template\>')
-:let replacement = brownie#input('template? ', 'default')
-:call brownie#replace('\<template\>', replacement)
-template

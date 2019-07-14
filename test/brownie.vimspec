@@ -23,6 +23,7 @@ Describe [brownie.vim]
 
     let g:brownie_template_dirs = [s:vars.plugin_root . '/test/template']
   End
+
   After all
     delfunction Call
     delcommand Call
@@ -32,28 +33,33 @@ Describe [brownie.vim]
     After each
       unlet g:test
     End
+
     It doesn't allow to assign twice.
       Call let_default('g:test', 0)
       Assert Equals(g:test, 0)
       Call let_default('g:test', 1)
       Assert Equals(g:test, 0)
     End
+
     It doesn't assign when the variable is already declared.
       let g:test = 0
       Call let_default('g:test', 1)
       Assert Equals(g:test, 0)
     End
+
   End
 
   Describe s:use_softtab()
     After all
       setlocal noexpandtab
     End
+
     It returns 1 when expandtab is enabled.
       setlocal expandtab
       let v = s:funcs.use_softtab()
       Assert Equals(v, 1)
     End
+
     It returns 0 when expandtab is disabled.
       setlocal noexpandtab
       let v = s:funcs.use_softtab()
@@ -67,19 +73,18 @@ Describe [brownie.vim]
       let r = s:funcs.str_divide_pos(s, strlen('hoge'))
       Assert Equals(r, ['hoge', 'fuga'])
     End
+
     It can separate string even if 0 is provided as the position.
       let s = 'hoge'
       let r = s:funcs.str_divide_pos(s, 0)
       Assert Equals(r, ['', s])
     End
+
     It can separate string even if length of string is provided as the position.
       let s = 'hoge'
       let r = s:funcs.str_divide_pos(s, strlen(s))
       Assert Equals(r, [s, ''])
     End
-  End
-
-  Describe options_shelter
   End
 
   Describe brownie#is_buffer_empty()
@@ -144,136 +149,171 @@ Describe [brownie.vim]
     End
   End
 
-  Describe s:extractor
-    Before all
-      let g:context = s:vars.context
-      let g:viewer = s:vars.viewer
-      function GetTemplatePath(name)
-        return s:funcs.list_templates('extract', 'template', a:name)[-1]
-      endfunction
-      function NewExtractor()
-        let g:extractor = deepcopy(s:vars.extractor)
-        return g:extractor
-      endfunction
-    End
-    After all
-      unlet g:extractor
-    End
-    Before each
-      silent % delete _
-    End
-    It's ready().
-      call NewExtractor()
-      " NOTE: context.kind is set in brownie#extract().
-      let context = {
-            \ 'kind': '',
-            \ 'path': '',
-            \ 'script': [],
-            \ 'contents': ['template'],
-            \ 'extract_pos': {'line': 1, 'col': 1},
-            \ 'indent': 0,
-            \ 'original_text': ['', ''],
-            \ 'is_sourcing': 0,
-            \ }
-      let context.path = GetTemplatePath('oneline')
-      call g:extractor.ready(context.path)
-      Assert Equals(g:context, context)
-    End
-    Context's s:viewer
-      It's update_template_location().
-        call g:viewer.update_template_location()
-        Assert Equals(g:viewer.template_location, {'begin': 1, 'end': 1})
-      End
-      It's paste_template().
-        call g:viewer.paste_template()
-        Assert Equals(WholeBufline(), ['template'])
-      End
-      It's paste_template() with original text.
-        let g:context.original_text = ['hoge-', '-fuga']
-        call g:viewer.paste_template()
-        Assert Equals(WholeBufline(), ['hoge-template-fuga'])
-        let g:context.original_text = ['', '']
-      End
-      It's restore_buffer_lines().
-        call g:viewer.paste_template()
-        call g:viewer.restore_buffer_lines()
-        Assert Equals(WholeBufline(), [''])
-      End
-      It's restore_buffer_lines() with original text.
-        let g:context.original_text = ['hoge', '-fuga']
-        call g:viewer.paste_template()
-        call g:viewer.restore_buffer_lines()
-        Assert Equals(WholeBufline(), ['hoge-fuga'])
-        let g:context.original_text = ['', '']
-      End
-      It's finish does nothing with buffer lines.
-        call setline(1, 'hoge')
-        call g:viewer.finish()
-        Assert Equals(WholeBufline(), ['hoge'])
-      End
-      It's set_cursor_pos().
-        call NewExtractor().ready(GetTemplatePath('cursor'))
-        call g:viewer.update_screen()
-        call g:extractor.set_cursor_pos()
-        Assert Equals(WholeBufline(), ['template', '', 'template'])
-        Assert Equals(line('.'), 2)
-        Assert Equals(col('.'), 1)
-      End
-      It can separate contents into script and template.
-        let path = GetTemplatePath('command')
-        call NewExtractor().ready(path)
-        Assert Equals(g:context.script, [readfile(path)[0]])
-        Assert Equals(g:context.contents, ['template'])
-      End
-      It executes command on the top of the template/snippet file.
-        let g:test_msg = ''
-        call g:extractor.source_script()
-        Assert Equals(g:test_msg, 'executed')
-        unlet g:test_msg
-      End
-    End
-  End
-
   Describe brownie#extract()
-    Before all
-      function Extract(kind, name) abort
-        return brownie#extract('extract', a:kind, a:name)
-      endfunction
-    End
     After all
       delfunction Extract
     End
+
     Before each
       silent % delete _
     End
-    After each
+
+    Context template
+      Before all
+        function! Extract(name) abort
+          return brownie#extract('extract', 'template', a:name)
+        endfunction
+      End
+
+      It extracts a template - oneline
+        call Extract('oneline')
+        Assert Equals(WholeBufline(), ['template'])
+      End
+
+      It extracts a template - multiline
+        call Extract('multiline')
+        Assert Equals(WholeBufline(), ['template', 'template'])
+      End
+
+      It extracts a template - replace
+        call Extract('replace')
+        Assert Equals(WholeBufline(), ['replaced'])
+      End
+
+      It extracts a template - cursor1
+        call Extract('cursor1')
+        Assert Equals(line('.'), 2)
+        Assert Equals(WholeBufline(), ['template', '', 'template'])
+      End
+
+      It extracts a template - cursor2
+        call Extract('cursor2')
+        Assert Equals(getline('.'), 'cursor_line')
+      End
+
+      It extracts a template - cursor3
+        call Extract('cursor3')
+        Assert Equals(getline('.'), 'cursor_line')
+      End
+
+      It extracts a template - cursor4
+        call Extract('cursor4')
+        Assert Equals(getline('.'), 'cursor_line')
+      End
+
+      It extracts a template - command
+        let g:test_msg = ''
+        call Extract('command')
+        Assert Equals(g:test_msg, 'executed')
+      End
+
+      It extracts a template with softtab - indent
+        setlocal expandtab shiftwidth=2
+        call Extract('indent')
+        Assert Equals(WholeBufline(), ['  indent'])
+        setlocal noexpandtab
+      End
     End
-    It extracts a oneline template.
-      let returned = Extract('template', 'oneline')
-      Assert Equals(returned, 1)
-      Assert Equals(WholeBufline(), ['template'])
-    End
-    It extracts a multiline template.
-      call Extract('template', 'multiline')
-      Assert Equals(WholeBufline(), ['template', 'template'])
-    End
-    It uses softtab as indentations.
-      setlocal expandtab shiftwidth=2
-      call Extract('template','indent')
-      Assert Equals(WholeBufline(), ['  indent'])
-      setlocal noexpandtab
-    End
-    It extracts a oneline snippet.
-      call Extract('snippet', 'oneline')
-      Assert Equals(WholeBufline(), ['snippet'])
-    End
-    It extracts a multiline snippet.
-      call Extract('snippet', 'multiline')
-      Assert Equals(WholeBufline(), ['snippet', 'snippet'])
-    End
-    It returns 0 when an unavailable template/snippet is specificated.
-      Assert Equals(Extract('template', 'hoge'), 0)
-      Assert Equals(Extract('snippet', 'hoge'), 0)
+
+    Context snippet
+      Context in normal-mode
+        Before all
+          function! Extract(name) abort
+            return brownie#extract('extract', 'snippet', a:name)
+          endfunction
+        End
+
+        It extracts a snippet - oneline
+          call Extract('oneline')
+          Assert Equals(WholeBufline(), ['snippet'])
+        End
+
+        It extracts a snippet - multiline
+          call Extract('multiline')
+          Assert Equals(WholeBufline(), ['snippet', 'snippet'])
+        End
+
+        It extracts a snippet with indentations - multiline
+          call setline(1, "\t")
+          normal! $
+          call Extract('multiline')
+          Assert Equals(WholeBufline(), ["\tsnippet", "\tsnippet"])
+        End
+
+        It extracts a snippet - command
+          let g:test_msg = ''
+          call Extract('command')
+          Assert Equals(g:test_msg, 'executed')
+        End
+
+        It extracts a snippet - cursor1
+          call Extract('cursor1')
+          Assert Equals(line('.'), 2)
+          Assert Equals(WholeBufline(), ['snippet', '', 'snippet'])
+        End
+
+        It extracts a snippet - cursor2
+          call Extract('cursor2')
+          Assert Equals(WholeBufline(), ['snippet', 'cursor_line', 'snippet'])
+        End
+
+        It extracts a snippet - cursor3
+          call Extract('cursor3')
+          Assert Equals(WholeBufline(), ['snippet', 'cursor_line', 'snippet'])
+        End
+
+        It extracts a snippet - cursor4
+          call Extract('cursor4')
+          Assert Equals(WholeBufline(), ['snippet', 'cursor_line', 'snippet'])
+        End
+
+        It extracts a snippet - replace
+          call Extract('replace')
+          Assert Equals(getline('.'), 'snippet')
+        End
+      End
+
+      Context in insert-mode
+        Before all
+          function! Extract(name) abort
+            startinsert!
+            return brownie#extract('extract', 'snippet', a:name)
+            stopinsert
+          endfunction
+        End
+
+        It extracts a snippet with indentations - multiline
+          call setline(1, "\t")
+          call Extract('multiline')
+          Assert Equals(WholeBufline(), ["\tsnippet", "\tsnippet"])
+        End
+
+        It extracts a snippet - cursor1
+          call Extract('cursor1')
+          Assert Equals(line('.'), 2)
+          Assert Equals(WholeBufline(), ['snippet', '', 'snippet'])
+        End
+
+        It extracts a snippet - cursor2
+          call Extract('cursor2')
+          Assert Equals(WholeBufline(), ['snippet', 'cursor_line', 'snippet'])
+        End
+
+        It extracts a snippet - cursor3
+          call Extract('cursor3')
+          Assert Equals(WholeBufline(), ['snippet', 'cursor_line', 'snippet'])
+        End
+
+        It extracts a snippet - cursor4
+          call Extract('cursor4')
+          Assert Equals(WholeBufline(), ['snippet', 'cursor_line', 'snippet'])
+        End
+
+        It extracts a snippet - replace
+          call Extract('replace')
+          Assert Equals(getline('.'), 'snippet')
+        End
+      End
     End
   End
 End

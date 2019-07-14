@@ -1,0 +1,3 @@
+snippet
+cursor_line{{_cursor_}}
+snippet
