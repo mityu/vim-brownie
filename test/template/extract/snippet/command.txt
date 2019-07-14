@@ -1,2 +1,2 @@
-:call brownie#replace('\<kind\>', 'snippet')
-kind
+:let g:test_msg = 'executed'
+snippet
