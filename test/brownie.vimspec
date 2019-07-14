@@ -1,11 +1,11 @@
 let s:scope = themis#helper('scope')
 let s:funcs = s:scope.funcs('autoload/brownie.vim')
 let s:vars = s:funcs.script_variables()
+let g:assert = themis#helper('assert')
 call themis#func_alias(s:funcs)
 call themis#func_alias(s:vars.extractor)
 call themis#func_alias(s:vars.viewer)
 call themis#func_alias(s:vars.options_shelter)
-call themis#helper('command').with(themis#helper('assert'))
 
 Describe [brownie.vim]
   Before all
@@ -36,34 +36,34 @@ Describe [brownie.vim]
 
     It doesn't allow to assign twice.
       Call let_default('g:test', 0)
-      Assert Equals(g:test, 0)
+      call g:assert.equals(g:test, 0)
       Call let_default('g:test', 1)
-      Assert Equals(g:test, 0)
+      call g:assert.equals(g:test, 0)
     End
 
     It doesn't assign when the variable is already declared.
       let g:test = 0
       Call let_default('g:test', 1)
-      Assert Equals(g:test, 0)
+      call g:assert.equals(g:test, 0)
     End
 
   End
 
   Describe s:use_softtab()
     After all
-      setlocal noexpandtab
+      set noexpandtab
     End
 
     It returns 1 when expandtab is enabled.
-      setlocal expandtab
+      set expandtab
       let v = s:funcs.use_softtab()
-      Assert Equals(v, 1)
+      call g:assert.equals(v, 1)
     End
 
     It returns 0 when expandtab is disabled.
-      setlocal noexpandtab
+      set noexpandtab
       let v = s:funcs.use_softtab()
-      Assert Equals(v, 0)
+      call g:assert.equals(v, 0)
     End
   End
 
@@ -71,31 +71,31 @@ Describe [brownie.vim]
     It separates string with provided the position.
       let s = 'hogefuga'
       let r = s:funcs.str_divide_pos(s, strlen('hoge'))
-      Assert Equals(r, ['hoge', 'fuga'])
+      call g:assert.equals(r, ['hoge', 'fuga'])
     End
 
     It can separate string even if 0 is provided as the position.
       let s = 'hoge'
       let r = s:funcs.str_divide_pos(s, 0)
-      Assert Equals(r, ['', s])
+      call g:assert.equals(r, ['', s])
     End
 
     It can separate string even if length of string is provided as the position.
       let s = 'hoge'
       let r = s:funcs.str_divide_pos(s, strlen(s))
-      Assert Equals(r, [s, ''])
+      call g:assert.equals(r, [s, ''])
     End
   End
 
   Describe brownie#is_buffer_empty()
     It returns true when buffer is empty.
       silent % delete _
-      Assert Equals(brownie#is_buffer_empty(), 1)
+      call g:assert.equals(brownie#is_buffer_empty(), 1)
     End
 
     It returns false when buffer is not empty.
       call setline(1, 'hoge')
-      Assert Equals(brownie#is_buffer_empty(), 0)
+      call g:assert.equals(brownie#is_buffer_empty(), 0)
     End
 
     Context from another buffer
@@ -109,7 +109,7 @@ Describe [brownie.vim]
         let bufnr = bufnr('%')
         new
         call setline(1, 'hoge')
-        Assert Equals(brownie#is_buffer_empty(bufnr), 1)
+        call g:assert.equals(brownie#is_buffer_empty(bufnr), 1)
       End
 
       It returns false when buffer is not empty.
@@ -117,7 +117,7 @@ Describe [brownie.vim]
         let bufnr = bufnr('%')
         new
         call setline(1, 'fuga')
-        Assert Equals(brownie#is_buffer_empty(bufnr), 0)
+        call g:assert.equals(brownie#is_buffer_empty(bufnr), 0)
       End
     End
   End
@@ -132,19 +132,19 @@ Describe [brownie.vim]
       delfunction List
     End
     It lists templates.
-      Assert Equals(brownie#list('list', 'template'),
+      call g:assert.equals(brownie#list('list', 'template'),
             \ sort(['always', 'template', 'always-always', 'always-template']))
     End
     It lists snippets.
-      Assert Equals(brownie#list('list', 'snippet'),
+      call g:assert.equals(brownie#list('list', 'snippet'),
             \ sort(['always', 'snippet', 'always-always', 'always-snippet']))
     End
     It can list templates even when filetype is empty.
-      Assert Equals(brownie#list('', 'template'),
+      call g:assert.equals(brownie#list('', 'template'),
             \ sort(['always-always', 'always-template']))
     End
     It can list snippets even when filetype is empty.
-      Assert Equals(brownie#list('', 'snippet'),
+      call g:assert.equals(brownie#list('', 'snippet'),
             \ sort(['always-always', 'always-snippet']))
     End
   End
@@ -158,7 +158,7 @@ Describe [brownie.vim]
       silent % delete _
     End
 
-    Context template
+    Context <template>
       Before all
         function! Extract(name) abort
           return brownie#extract('extract', 'template', a:name)
@@ -167,55 +167,93 @@ Describe [brownie.vim]
 
       It extracts a template - oneline
         call Extract('oneline')
-        Assert Equals(WholeBufline(), ['template'])
+        call g:assert.equals(WholeBufline(), ['template'])
       End
 
       It extracts a template - multiline
         call Extract('multiline')
-        Assert Equals(WholeBufline(), ['template', 'template'])
+        call g:assert.equals(WholeBufline(), ['template', 'template'])
       End
 
       It extracts a template - replace
         call Extract('replace')
-        Assert Equals(WholeBufline(), ['replaced'])
+        call g:assert.equals(WholeBufline(), ['replaced'])
       End
 
       It extracts a template - cursor1
         call Extract('cursor1')
-        Assert Equals(line('.'), 2)
-        Assert Equals(WholeBufline(), ['template', '', 'template'])
+        call g:assert.equals(line('.'), 2)
+        call g:assert.equals(WholeBufline(), ['template', '', 'template'])
       End
 
       It extracts a template - cursor2
         call Extract('cursor2')
-        Assert Equals(getline('.'), 'cursor_line')
+        call g:assert.equals(getline('.'), 'cursor_line')
       End
 
       It extracts a template - cursor3
         call Extract('cursor3')
-        Assert Equals(getline('.'), 'cursor_line')
+        call g:assert.equals(getline('.'), 'cursor_line')
       End
 
       It extracts a template - cursor4
         call Extract('cursor4')
-        Assert Equals(getline('.'), 'cursor_line')
+        call g:assert.equals(getline('.'), 'cursor_line')
       End
 
       It extracts a template - command
         let g:test_msg = ''
         call Extract('command')
-        Assert Equals(g:test_msg, 'executed')
+        call g:assert.equals(g:test_msg, 'executed')
       End
 
       It extracts a template with softtab - indent
-        setlocal expandtab shiftwidth=2
+        set expandtab shiftwidth=2
         call Extract('indent')
-        Assert Equals(WholeBufline(), ['  indent'])
-        setlocal noexpandtab
+        call g:assert.equals(WholeBufline(), ['  indent'])
+        set noexpandtab
+      End
+
+      Context check autocmds
+        Before all
+          augroup test_brownie
+            autocmd!
+            autocmd User brownie-extract-pre  call add(s:log, 'extract-pre')
+            autocmd User brownie-source-pre   call add(s:log, 'source-pre')
+            autocmd User brownie-source-post  call add(s:log, 'source-post')
+            autocmd User brownie-extract-post call add(s:log, 'extract-post')
+          augroup END
+
+          function CheckLog()
+            call g:assert.equals(s:log,
+                  \ ['extract-pre', 'source-pre', 'source-post', 'extract-post'])
+          endfunction
+        End
+
+        Before each
+          let s:log = []
+        End
+
+        It triggers autocmds - no script section
+          call Extract('oneline')
+          call CheckLog()
+        End
+
+        It triggers autocmds - script section
+          call Extract('command')
+          call CheckLog()
+        End
+
+        After all
+          augroup test_brownie
+            autocmd!
+          augroup END
+          delfunc CheckLog
+        End
       End
     End
 
-    Context snippet
+    Context <snippet>
       Context in normal-mode
         Before all
           function! Extract(name) abort
@@ -225,51 +263,72 @@ Describe [brownie.vim]
 
         It extracts a snippet - oneline
           call Extract('oneline')
-          Assert Equals(WholeBufline(), ['snippet'])
+          call g:assert.equals(WholeBufline(), ['snippet'])
+        End
+
+        It extracts a snippet with default text - oneline
+          call setline(1, 'default--text')
+          normal! f-
+          call Extract('oneline')
+          call g:assert.equals(getline('.'), 'default-snippet-text')
         End
 
         It extracts a snippet - multiline
           call Extract('multiline')
-          Assert Equals(WholeBufline(), ['snippet', 'snippet'])
+          call g:assert.equals(WholeBufline(), ['snippet', 'snippet'])
+        End
+
+        It extracts a snippet with default text - multiline
+          call setline(1, 'default--text')
+          normal! f-
+          call Extract('multiline')
+          call g:assert.equals(WholeBufline(), ['default-snippet', 'snippet-text'])
         End
 
         It extracts a snippet with indentations - multiline
           call setline(1, "\t")
           normal! $
           call Extract('multiline')
-          Assert Equals(WholeBufline(), ["\tsnippet", "\tsnippet"])
+          call g:assert.equals(WholeBufline(), ["\tsnippet", "\tsnippet"])
         End
 
         It extracts a snippet - command
           let g:test_msg = ''
           call Extract('command')
-          Assert Equals(g:test_msg, 'executed')
+          call g:assert.equals(g:test_msg, 'executed')
         End
 
         It extracts a snippet - cursor1
           call Extract('cursor1')
-          Assert Equals(line('.'), 2)
-          Assert Equals(WholeBufline(), ['snippet', '', 'snippet'])
+          call g:assert.equals(line('.'), 2)
+          call g:assert.equals(WholeBufline(), ['snippet', '', 'snippet'])
         End
 
         It extracts a snippet - cursor2
           call Extract('cursor2')
-          Assert Equals(WholeBufline(), ['snippet', 'cursor_line', 'snippet'])
+          call g:assert.equals(WholeBufline(), ['snippet', 'cursor_line', 'snippet'])
         End
 
         It extracts a snippet - cursor3
           call Extract('cursor3')
-          Assert Equals(WholeBufline(), ['snippet', 'cursor_line', 'snippet'])
+          call g:assert.equals(WholeBufline(), ['snippet', 'cursor_line', 'snippet'])
         End
 
         It extracts a snippet - cursor4
           call Extract('cursor4')
-          Assert Equals(WholeBufline(), ['snippet', 'cursor_line', 'snippet'])
+          call g:assert.equals(WholeBufline(), ['snippet', 'cursor_line', 'snippet'])
         End
 
         It extracts a snippet - replace
           call Extract('replace')
-          Assert Equals(getline('.'), 'snippet')
+          call g:assert.equals(getline('.'), 'snippet')
+        End
+
+        It extracts a template with softtab - indent
+          set expandtab shiftwidth=2
+          call Extract('indent')
+          call g:assert.equals(WholeBufline(), ['  indent'])
+          set expandtab& shiftwidth&
         End
       End
 
@@ -282,36 +341,48 @@ Describe [brownie.vim]
           endfunction
         End
 
+        It extracts a snippet - multiline
+          call Extract('multiline')
+          call g:assert.equals(WholeBufline(), ['snippet', 'snippet'])
+        End
+
         It extracts a snippet with indentations - multiline
           call setline(1, "\t")
           call Extract('multiline')
-          Assert Equals(WholeBufline(), ["\tsnippet", "\tsnippet"])
+          call g:assert.equals(WholeBufline(), ["\tsnippet", "\tsnippet"])
         End
 
         It extracts a snippet - cursor1
           call Extract('cursor1')
-          Assert Equals(line('.'), 2)
-          Assert Equals(WholeBufline(), ['snippet', '', 'snippet'])
+          call g:assert.equals(line('.'), 2)
+          call g:assert.equals(WholeBufline(), ['snippet', '', 'snippet'])
         End
 
         It extracts a snippet - cursor2
           call Extract('cursor2')
-          Assert Equals(WholeBufline(), ['snippet', 'cursor_line', 'snippet'])
+          call g:assert.equals(WholeBufline(), ['snippet', 'cursor_line', 'snippet'])
         End
 
         It extracts a snippet - cursor3
           call Extract('cursor3')
-          Assert Equals(WholeBufline(), ['snippet', 'cursor_line', 'snippet'])
+          call g:assert.equals(WholeBufline(), ['snippet', 'cursor_line', 'snippet'])
         End
 
         It extracts a snippet - cursor4
           call Extract('cursor4')
-          Assert Equals(WholeBufline(), ['snippet', 'cursor_line', 'snippet'])
+          call g:assert.equals(WholeBufline(), ['snippet', 'cursor_line', 'snippet'])
         End
 
         It extracts a snippet - replace
           call Extract('replace')
-          Assert Equals(getline('.'), 'snippet')
+          call g:assert.equals(getline('.'), 'snippet')
+        End
+
+        It extracts a template with softtab - indent
+          set expandtab shiftwidth=2
+          call Extract('indent')
+          call g:assert.equals(WholeBufline(), ['  indent'])
+          set expandtab& shiftwidth&
         End
       End
     End
