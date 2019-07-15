@@ -7,7 +7,6 @@ function! s:let_default(name, value) abort
   endif
 endfunction
 
-call s:let_default('g:brownie#info', {})
 call s:let_default('g:brownie_extra_imports', {})
 call s:let_default('s:FALSE', 0)
 call s:let_default('s:TRUE', !s:FALSE)
@@ -249,6 +248,9 @@ function! s:extractor.set_cursor_pos() abort
 endfunction
 
 function! s:extract_impl(template_path) abort
+  let g:brownie#info = {
+        \ 'kind': s:context.kind,
+        \ }
   call s:doautocmd('extract-pre')
   if s:context.kind ==# 'template' && !brownie#is_buffer_empty()
     call s:error_msg('cannot extract template here.')
@@ -262,6 +264,7 @@ function! s:extract_impl(template_path) abort
   finally
     call s:extractor.finish()
     call s:doautocmd('extract-post')
+    unlet! g:brownie#info
     return s:TRUE
   endtry
 endfunction
