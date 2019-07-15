@@ -51,19 +51,17 @@ Describe [brownie.vim]
 
   Describe s:use_softtab()
     After all
-      set noexpandtab
+      set expandtab&
     End
 
-    It returns 1 when expandtab is enabled.
+    It returns true when expandtab is enabled.
       set expandtab
-      let v = s:funcs.use_softtab()
-      call g:assert.equals(v, 1)
+      call g:assert.true(s:funcs.use_softtab())
     End
 
-    It returns 0 when expandtab is disabled.
+    It returns true when expandtab is disabled.
       set noexpandtab
-      let v = s:funcs.use_softtab()
-      call g:assert.equals(v, 0)
+      call g:assert.false(s:funcs.use_softtab())
     End
   End
 
@@ -119,6 +117,55 @@ Describe [brownie.vim]
         call setline(1, 'fuga')
         call g:assert.equals(brownie#is_buffer_empty(bufnr), 0)
       End
+    End
+  End
+
+  Describe s:indent()
+    Before all
+      function! Check(expect) abort
+        call g:assert.equals(s:funcs.indent(line('.')), a:expect)
+      endfunction
+    End
+
+    It returns indent 1
+      call setline(1, "\t")
+      call Check(1)
+    End
+
+    It returns indent 2
+      set expandtab shiftwidth=4
+      call setline(1, repeat(' ', 4*3))
+      call Check(3)
+    End
+
+    It returns indent 3
+      call setline(1, ["\t\t", ""])
+      normal! gg
+      call Check(2)
+      normal! j
+      call Check(0)
+    End
+
+    After each
+      set expandtab& smarttab& shiftwidth&
+    End
+
+    After all
+      delfunction Check
+    End
+  End
+
+  Describe brownie#get_current_bufnr()
+    It returns the current bufnr
+      call g:assert.equals(brownie#get_current_bufnr(), bufnr('%'))
+    End
+
+    It returns the alternative bufnr when it's in a cmdwin.
+      let bufnr = bufnr('%')
+      normal! q:
+      let r = brownie#get_current_bufnr()
+      execute "normal! \<C-c>\<C-c>"
+      call g:assert.equals(r, bufnr)
     End
   End
 
