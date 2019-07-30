@@ -1,0 +1,3 @@
+:call brownie#replace('\<text\>', 'snippet')
+:call brownie#highlight('\<snippet\>')
+text
