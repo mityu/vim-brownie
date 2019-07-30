@@ -87,13 +87,11 @@ function! s:viewer.restore_buffer_lines() abort
     return
   endif
   let loc = self.template_location
-  if loc.begin >= 1
-    if (loc.end - loc.begin) >= 2
-      execute 'silent' loc.begin + 1 . ',' . loc.end 'delete _'
-    endif
-    call setline(loc.begin, join(s:context.original_text, ''))
-    call cursor(s:context.extract_pos.line, s:context.extract_pos.col)
+  if (loc.end - loc.begin) >= 1
+    execute 'silent' loc.begin + 1 . ',' . loc.end 'delete _'
   endif
+  call setline(loc.begin, join(s:context.original_text, ''))
+  call cursor(s:context.extract_pos.line, s:context.extract_pos.col)
 endfunction
 
 function! s:viewer.update_template_location()

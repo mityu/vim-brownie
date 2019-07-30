@@ -371,6 +371,11 @@ Describe [brownie.vim]
           call g:assert.equals(getline('.'), 'snippet')
         End
 
+        It extracts a snippet - highlight
+          call Extract('highlight')
+          call g:assert.equals(getline('.'), 'snippet')
+        End
+
         It extracts a template with softtab - indent
           set expandtab shiftwidth=2
           call Extract('indent')
