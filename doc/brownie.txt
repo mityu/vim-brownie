@@ -280,7 +280,8 @@ See also: |brownie-write-example|.
   |:source| command.
 
 - template section
-  In this section, you write template/snippet codes.
+  In this section, you write template/snippet codes.  All of the indents must
+  be hard tabs.
   And, `{{_cursor_}}` marker is available.  After extracting a
   template/snippet, the cursor will jump to the marker.
 
