@@ -79,7 +79,7 @@ function! s:viewer.update_screen() abort
   call self.update_template_location()
   call self.paste_template()
   call self.update_highlight_region()
-  redraw!
+  redraw
 endfunction
 
 function! s:viewer.restore_buffer_lines() abort
@@ -134,7 +134,7 @@ function! s:viewer.highlight_pattern(pattern) abort
   syntax clear browniePlaceHolder
   execute 'syntax match browniePlaceHolder /' . a:pattern . '/'
         \ 'contained containedin=brownieTemplateLocation'
-  redraw!
+  redraw
 endfunction
 
 function! s:viewer.finish() abort
